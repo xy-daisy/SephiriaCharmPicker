@@ -1,4 +1,4 @@
-# Sephiria Charm Picker（商店自选神器）v1.0.0 — 安装说明
+# Sephiria Charm Picker（商店自选神器）v1.0.1 — 安装说明
 
 商店里用蓝宝石刷新商品列表的那个按钮旁边，会多出一个**「自选」按钮**。点开它，可以从
 **当前这一局可能出现的全部神器 / 石板**里直接挑一个，放进商店的补货栏位 —— **不花蓝宝石**。
@@ -46,8 +46,6 @@ winhttp.dll
 doorstop_config.ini
 BepInEx/
 ```
-
-> 如果你装过 **Sephiria Together**（联机 mod）的 `with-BepInEx` 整合包，BepInEx 已经自带了。
 
 如果没装：取 **v6 的 Unity Mono x64 构建**（本游戏是 `BepInEx 6.0.0-be.697`，Unity 6000.3.x），
 把包里的文件**直接解压到游戏根目录**，让 `winhttp.dll` 和 `Sephiria.exe` 在同一层，
@@ -131,7 +129,7 @@ Sephiria/BepInEx/plugins/SephiriaCharmPicker.dll
 2. 在 `LogOutput.log` 里搜 `[SCP] loaded`，正常会有这样一行：
 
    ```text
-   [SCP] loaded v1.0.0 assembly=c57a0daeab8e (baseline c57a0daeab8e) enabled=1 label=自选 place=Down ...
+   [SCP] loaded v1.0.1 assembly=c57a0daeab8e (baseline c57a0daeab8e) enabled=1 label=自选 place=Down ...
    ```
 
    - **`assembly=` 后面六个字符和上面不一样** = 游戏版本与 mod 编译时不一致，把这行发我。
@@ -209,7 +207,30 @@ locked; the rest stay changeable. There is an "all" tag plus a "no category" tag
 carry no category at all (it only appears when such charms are in the pool).
 
 **Troubleshooting:** everything is logged to `Sephiria/BepInEx/LogOutput.log` with the `[SCP]` prefix.
-Look for `[SCP] loaded v1.0.0 assembly=...` first. If the panel opens but clicking a candidate does
-nothing, find the `[SCP] click: pos=... hits=N ... topIsMine=...` line: `hits=0` means nothing is
-under the cursor (usually the list scrolled out of view), `topIsMine=0` means something else is
-covering the panel.
+Look for `[SCP] loaded v1.0.1 assembly=...` first. If the panel opens but clicking a candidate does
+nothing, find the `[SCP] click: pos=... hits=N ... topIsMine=...` line: `hits=0` means the press was
+handed to nobody, so the panel takes it from its own hit test (the line ends with `fallback=id1234`
+and a `cell click id=1234` follows); `fallback=no` means you really pressed empty space.
+`topIsMine=0` means something else is covering the panel — the fallback stays out of that case
+(`fallback=left-to-game`) and never steals another window's click.
+
+---
+
+## 版本记录 / Changelog
+
+### v1.0.1
+
+- **修掉"当主机时面板错位"**：内容区（标签行、槽位列、卡片大小）的基准是从克隆体的滚动视口
+  量出来的；当主机时克隆体醒得更慢，量到的顶边会矮一截，于是整个内容区被压低约 212 像素
+  （标签行上方多出一段空白、卡片变矮、底部一行被裁）。现在发现顶边异常就改用目录矩形反推，
+  第一把当主机也有效。
+- **Esc 只关面板**：以前按 Esc 会把商店一起关掉（同一次按键被两层界面各消费一次），修好后又
+  变成背包被关（背包自己重载了关闭逻辑）。现在自选页应答 Esc 期间整个跳过游戏的 Esc 扫描，
+  商店和背包都留在原处；万一有漏网的，半秒内会自动把背包重新打开。
+- **点击兜底**：有时候游戏的点击派发这一次谁都没交给（日志 `hits=0`），面板就用自己算出的
+  格子位置接管这次点击；真被别的界面盖住时不会插手。可用 `FallbackClickHitTest` 关掉。
+
+### v1.0.0
+
+- 首个发布版本：商店「自选」按钮、候选池照抄游戏过滤规则、逐槽冻结、神器 / 石板双页签、
+  无属性标签、Esc 关闭面板。
