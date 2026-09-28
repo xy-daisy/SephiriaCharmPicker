@@ -1,4 +1,4 @@
-# Sephiria Charm Picker（商店自选神器）v1.0.1 — 安装说明
+# Sephiria Charm Picker（商店自选神器）v1.0.2 — 安装说明
 
 商店里用蓝宝石刷新商品列表的那个按钮旁边，会多出一个**「自选」按钮**。点开它，可以从
 **当前这一局可能出现的全部神器 / 石板**里直接挑一个，放进商店的补货栏位 —— **不花蓝宝石**。
@@ -46,6 +46,8 @@ winhttp.dll
 doorstop_config.ini
 BepInEx/
 ```
+
+> 如果你装过 **Sephiria Together**（联机 mod）的 `with-BepInEx` 整合包，BepInEx 已经自带了。
 
 如果没装：取 **v6 的 Unity Mono x64 构建**（本游戏是 `BepInEx 6.0.0-be.697`，Unity 6000.3.x），
 把包里的文件**直接解压到游戏根目录**，让 `winhttp.dll` 和 `Sephiria.exe` 在同一层，
@@ -129,7 +131,7 @@ Sephiria/BepInEx/plugins/SephiriaCharmPicker.dll
 2. 在 `LogOutput.log` 里搜 `[SCP] loaded`，正常会有这样一行：
 
    ```text
-   [SCP] loaded v1.0.1 assembly=c57a0daeab8e (baseline c57a0daeab8e) enabled=1 label=自选 place=Down ...
+   [SCP] loaded v1.0.2 assembly=c57a0daeab8e (baseline c57a0daeab8e) enabled=1 label=自选 place=Down ...
    ```
 
    - **`assembly=` 后面六个字符和上面不一样** = 游戏版本与 mod 编译时不一致，把这行发我。
@@ -153,6 +155,18 @@ Sephiria/BepInEx/plugins/SephiriaCharmPicker.dll
 - 有 `cell click id=...` 但接下来是 `pick refused` ⇒ 这一类已经没有可写的栏位了，
   日志里会写明原因。
 - 配置里 `FallbackClickHitTest = false` 会关掉上面的接管，只保留游戏自己的派发。
+
+**面板打开了，但只有右下角的候选能点，左边的槽位卡片和顶上的分类标签点不动**
+
+这是 v1.0.2 修掉的那个问题。如果还遇到，先确认版本号是 v1.0.2，再把这两行发我：
+
+```text
+[SCP] panel: open ... chrome=...
+[SCP] click: pos=... ... fallback=... chrome=...
+```
+
+`chrome=` 后面形如 `i1/b1/a1/off0/fix0`：`off` 不是 0 就说明又有画布组被关掉了
+（日志里会同时有一条 `[SCP] chrome: the game disabled ...`，它写明是谁关的）；`fix` 是自愈次数。
 
 **面板是空的**
 
@@ -207,7 +221,7 @@ locked; the rest stay changeable. There is an "all" tag plus a "no category" tag
 carry no category at all (it only appears when such charms are in the pool).
 
 **Troubleshooting:** everything is logged to `Sephiria/BepInEx/LogOutput.log` with the `[SCP]` prefix.
-Look for `[SCP] loaded v1.0.1 assembly=...` first. If the panel opens but clicking a candidate does
+Look for `[SCP] loaded v1.0.2 assembly=...` first. If the panel opens but clicking a candidate does
 nothing, find the `[SCP] click: pos=... hits=N ... topIsMine=...` line: `hits=0` means the press was
 handed to nobody, so the panel takes it from its own hit test (the line ends with `fallback=id1234`
 and a `cell click id=1234` follows); `fallback=no` means you really pressed empty space.
@@ -217,6 +231,17 @@ and a `cell click id=1234` follows); `fallback=no` means you really pressed empt
 ---
 
 ## 版本记录 / Changelog
+
+### v1.0.2
+
+- **修掉"面板只有右下角候选能点，左边槽位卡片和顶部标签全都没反应"**：面板是从游戏图鉴克隆
+  来的，克隆的时候把图鉴那张"画布组"的数值一起带了过来。一个关着的画布组会把**整棵子树**
+  从每一次点击检测里剔掉 —— 界面照常显示、照常排版，就是一个点击都收不到。所以症状是
+  "第一次打开正常、关掉再打开就全瞎"，而右下角的候选还能点（它们走的是 mod 自己的命中判定）。
+  现在克隆完成后会强制打开所有画布组，并每 30 帧复查一次自动修复；同时把克隆体上遗留的游戏
+  界面组件销毁掉，游戏就没法再关它。
+- 新增 `chrome=` 诊断字段（打开面板、每次点击、每 30 帧的复查都会带）：画布组开关状态、
+  有几个是关的、自愈过几次，下次再有"点不动"不用靠截图猜是哪一层。
 
 ### v1.0.1
 
